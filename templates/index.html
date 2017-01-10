@@ -1,0 +1,80 @@
+{% extends "layout.html" %}
+
+{% block page_title %} Hello World {{ui['title_sep']}}{% end %}
+{% block css_files %}
+    <link href="{{static_url('css/index.css')}}" rel="stylesheet">
+{% end %}
+
+{% block page_body %}
+<div class="jumbotron">
+    <div class="container">
+        <h1>Hello, World!</h1>
+        <p></p>
+        <p>
+            <a class="btn btn-primary btn-lg" href="{{ reverse_url('simple_search') }}">Upload</a>
+        </p>
+    </div>
+</div>
+{# Hello World from template #}
+
+<div class="row">
+     <div class='col-sm-6'>
+        <div class="panel panel-default">
+            <div class="panel-heading">系统信息</div>
+            <div class="{#panel-body#}">
+                <table class="table table-hover {#table-bordered#}">
+                    <tr><th>操作系统</th><td>{{runtime['os']['sysname']}} {{runtime['os']['release']}} </td></tr>
+                    <tr><th>Python路径</th><td>{{runtime['python_path']}}</td></tr>
+                    <tr><th>Python版本</th><td>{{runtime['python_version']}}</td></tr>
+                    <tr><th>Tornado版本</th><td>{{runtime['tornado_version']}}</td></tr>
+                </table>
+            </div>
+        </div>
+     </div>
+
+     <div class='col-sm-6'>
+        <div class="panel panel-default">
+            <div class="panel-heading">相关目录</div>
+            <div class="{#panel-body#}">
+                <table class="table table-hover {#table-bordered#}">
+                    <tr><th>程序目录</th><td>{{settings.BASE_DIR}}</td></tr>
+                    <tr><th>media目录</th><td>{{settings.web['media_path']}}</td></tr>
+                    <tr><th>static目录</th><td>{{settings.web['static_path']}}</td></tr>
+                    <tr><th>template目录</th><td>{{settings.web['template_path']}}</td></tr>
+                </table>
+            </div>
+        </div>
+     </div>
+
+     <div class='col-sm-6'>
+        <div class="panel panel-default">
+            <div class="panel-heading">Latest Posts</div>
+            <div class="panel-body">
+                <ul class="list-unstyled">
+                    {% if len(latest_posts) > 0 %}
+                        {% for post in latest_posts %}
+                            <li>{{post.title}} by {{post.author.first_name}}
+                            <span>{{post.created_at}}</span></li>
+                        {% end %}
+                    {% else %}
+                    <li>no posts yet</li>
+                    {% end %}
+                </ul>
+            </div>
+        </div>
+     </div>
+
+     <div class='col-sm-6'>
+        <div class="panel panel-default">
+            <div class="panel-heading">Client</div>
+            <div class="panel-body">
+            <p> To test the upload capablity, please run the following code
+                <kbd>curl -i -L -F img=@avatar.png localhost:8000/upload</kbd>
+             </p>
+            </div>
+        </div>
+     </div>
+
+
+</div>
+{% end %}
