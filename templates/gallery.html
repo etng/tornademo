@@ -1,0 +1,109 @@
+{% extends "layout.html" %}
+
+{% block page_title %} Gallery {{ui['title_sep']}}{% end %}
+{% block css_files %}
+    <link href="{{static_url('css/gallery.css')}}" rel="stylesheet">
+{% end %}
+
+{% block page_body %}
+ <div class="panel panel-default">
+    <div class="panel-heading">图片鉴别
+        <div class="pull-right actions">
+            <div class="btn-group">
+              <a href="/gallery?offset={{offset}}" class="btn btn-default">
+                <span class="glyphicon glyphicon-refresh"></span>Next
+              </a>
+            </div>
+        </div>
+    </div>
+    <div class="panel-body">
+        <div class="row img-grid">
+            {% for author, img in images %}
+             <div class='col-sm-3 img-cell'>
+                <div class="panel panel-default">
+                    <div class="panel-heading">@{{author}}
+                        <div class="pull-right actions">
+                            <div class="btn-group">
+                              <a href="/del-image" data-url="{{img}}" class="btn btn-default btn-delete-image">
+                                <span class="glyphicon glyphicon-remove"></span>Delete
+                              </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <a href="{{img}}" target="_blank"><img src="{{img}}" /></a>
+                    </div>
+                </div>
+             </div>
+            {% end %}
+        </div>
+    </div>
+    <div class="panel-heading">图片鉴别
+        <div class="pull-right actions">
+            <div class="btn-group">
+              <a href="/gallery?offset={{offset}}" class="btn btn-default">
+                <span class="glyphicon glyphicon-refresh"></span>Next
+              </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style type="text/css">
+    .img-cell{
+        /*
+        height: 300px;
+        */
+    }
+    .img-cell .panel-body{
+        height: 300px;
+    }
+    .img-cell .panel-body img{
+        height: 95%;
+        width: 95%;
+        max-width: 280px;
+    }
+    .panel-heading .actions{
+        margin-top: -8px;
+    }
+</style>
+
+{% end %}
+
+{% block js_files %}
+<script type="text/javascript">
+jQuery(function(){
+    var loading = false;
+    var load_threshold = 2;
+    function load_images(){
+        loading = true
+        console.log('loading images')
+        setTimeout(function(){
+            loading = false;
+            console.log('create image cells now')
+        }, 100)
+    }
+    function delete_image(url, cb){
+        console.log('deleting image', url)
+        $.post('/del-image', {
+            'image': url
+        }, function(response){
+            console.log(response.message)
+        })
+        // setTimeout(cb, 100)
+    }
+    $('.btn-delete-image').on('click', function(){
+        var $btn = $(this)
+        delete_image($btn.data('url'))
+        $btn.closest('.panel').parent().remove()
+        var cell_cnt = $('.img-grid .img-cell').length
+        console.log(cell_cnt, 'cells left')
+        if(load_threshold>=cell_cnt && !loading){
+            console.log('need to load more images')
+            load_images()
+        }
+        return false;
+    })
+})
+</script>
+{% end %}

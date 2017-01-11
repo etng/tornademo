@@ -8,11 +8,18 @@ import settings
 import json
 import os
 import sys
+import shutil
 from models import *  # noqa
 
 tornado.options.define(
     "http_port",
     default=8000,
+    type=int,
+    help="run server on the given port."
+)
+tornado.options.define(
+    "https_port",
+    default=8443,
     type=int,
     help="run server on the given port."
 )
@@ -96,6 +103,35 @@ class IndexHandler(tornado.web.RequestHandler):
             runtime=runtime,
             latest_posts=Post.objects,
         )
+
+
+class GalleryHandler(tornado.web.RequestHandler):
+    def get(self):
+        def format_image(filename):
+            return os.path.basename(os.path.dirname(filename)), '/{}'.format(filename)
+        perpage = 16
+        offset = int(self.get_query_argument('offset', 0))
+        data_file = os.path.join(settings.BASE_DIR, 'data/gallery_files.json')
+        images = map(format_image, json.load(open(data_file)))[offset:offset + perpage]
+        self.render(
+            'gallery.html',
+            ui=settings.ui,
+            settings=settings,
+            images=images,
+            offset=offset + perpage
+        )
+
+
+class DeleteImageHandler(tornado.web.RequestHandler):
+    def post(self):
+        # import ipdb;ipdb.set_trace()
+        image = self.get_body_argument('image').lstrip('/')
+        trash_path = os.path.join(settings.web['media_path'], 'trash')
+        dest_path = os.path.join(trash_path, image)
+        dest_parent = os.path.dirname(dest_path)
+        os.path.exists(dest_parent) or os.makedirs(dest_parent, 0777)
+        shutil.move(os.path.join(settings.BASE_DIR, image), dest_path)
+        self.write(dict(status=True, message='deleted'))
 
 
 class FlowHandler(tornado.web.RequestHandler):
@@ -195,6 +231,8 @@ if __name__ == "__main__":
         (r"/", IndexHandler),
         tornado.web.url(r"/upload", UploadHandler, name='upload'),
         (r"/flow", FlowHandler),
+        tornado.web.url(r"/gallery", GalleryHandler, name="gallery"),
+        (r"/del-image", DeleteImageHandler),
         (r"/error/(\d+)", ErrorHandler),
         (r"/rewrite_k/(\d+)/(.*)", RewriteHandler),
         (r"/rewrite_n/(?P<id>\d+)/(?P<action>.*)", RewriteHandler),
@@ -218,11 +256,18 @@ if __name__ == "__main__":
         ",".join(options.modules)
     )
     if 1:
-        http_server = tornado.httpserver.HTTPServer(app)
+        ssl_options = {
+            "certfile": "data/https/ca.csr",
+            "keyfile": "data/https/ca.key",
+        }
+        ssl_options = None
+        http_server = tornado.httpserver.HTTPServer(app, ssl_options=ssl_options)
         if 0:
             http_server.listen(options.http_port)
+            http_server.listen(options.https_port)
         else:
             http_server.bind(options.http_port)
+            http_server.bind(options.https_port)
             http_server.start(num_processes=options.http_processes)
     else:
         app.listen(options.http_port)

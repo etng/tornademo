@@ -68,7 +68,9 @@
             $frm.trigger('submit');
             return false;
         })
-        $('form.validate').parsley(ParsleyConfig);
+        if($('form.validate').length){
+            $('form.validate').parsley(ParsleyConfig);
+        }
 
         $('button.submit-continue').click(function(){
             $(this.form).find('input[name="_to"]').val('submit').end().trigger('submit')
