@@ -30,6 +30,7 @@ web = {
 
 log_path = os.path.join(BASE_DIR, 'data/logs/app.log')
 use_template = True
+LOGIN_URL = '/login'
 
 ui = {
     'site_title': 'Tornado Demo Site',

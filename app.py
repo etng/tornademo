@@ -10,6 +10,7 @@ import os
 import sys
 import shutil
 from models import *  # noqa
+settings.web['login_url'] = settings.LOGIN_URL
 
 tornado.options.define(
     "http_port",
@@ -38,7 +39,48 @@ tornado.options.define(
 )
 
 
-class ShopSearchHandler(tornado.web.RequestHandler):
+class BaseHandler(tornado.web.RequestHandler):
+    def get_current_user(self):
+        user_cookie = self.get_secure_cookie("user")
+        # import ipdb;ipdb.set_trace()
+        if user_cookie:
+            return json.loads(user_cookie)
+        return None
+
+
+class LogoutHandler(BaseHandler):
+    def get(self):
+        self.clear_cookie('user')
+        return self.redirect('/')
+
+
+class LoginHandler(BaseHandler):
+    def initialize(self, *args, **kwargs):
+        print 'args', args
+        print 'kwargs', kwargs
+
+    def get(self):
+        # print 'next url:', self.get_query_argument("next", '/')
+        # self.write(self.__class__.__name__)
+        self.render(
+            'login.html',
+            ui=settings.ui,
+            settings=settings,
+        )
+
+    def post(self):
+        username = self.get_body_argument('username', '')
+        password = self.get_body_argument('password', '')
+        if username == password:
+            # import ipdb;ipdb.set_trace()
+            self.set_secure_cookie('user', json.dumps(username), expires_days=0.2)
+            return self.redirect(self.get_query_argument("next", '/'))
+        else:
+            self.redirect(self.settings.login_url)
+
+
+
+class ShopSearchHandler(BaseHandler):
     def initialize(self, *args, **kwargs):
         print 'args', args
         print 'kwargs', kwargs
@@ -47,7 +89,7 @@ class ShopSearchHandler(tornado.web.RequestHandler):
         self.write(self.__class__.__name__)
 
 
-class ShopShowHandler(tornado.web.RequestHandler):
+class ShopShowHandler(BaseHandler):
     def initialize(self, *args, **kwargs):
         print 'args', args
         print 'kwargs', kwargs
@@ -66,7 +108,8 @@ class ShopShowHandler(tornado.web.RequestHandler):
             print field, getattr(self.request, field)
 
 
-class IndexHandler(tornado.web.RequestHandler):
+class IndexHandler(BaseHandler):
+    @tornado.web.authenticated
     def get(self):
         if not settings.use_template:
             # import ipdb;ipdb.set_trace()
@@ -105,7 +148,8 @@ class IndexHandler(tornado.web.RequestHandler):
         )
 
 
-class GalleryHandler(tornado.web.RequestHandler):
+class GalleryHandler(BaseHandler):
+    @tornado.web.authenticated
     def get(self):
         def format_image(filename):
             return os.path.basename(os.path.dirname(filename)), '/{}'.format(filename)
@@ -132,7 +176,8 @@ class GalleryHandler(tornado.web.RequestHandler):
         )
 
 
-class DeleteImageHandler(tornado.web.RequestHandler):
+class DeleteImageHandler(BaseHandler):
+    @tornado.web.authenticated
     def post(self):
         # import ipdb;ipdb.set_trace()
         image = self.get_body_argument('image').lstrip('/')
@@ -144,7 +189,7 @@ class DeleteImageHandler(tornado.web.RequestHandler):
         self.write(dict(status=True, message='deleted'))
 
 
-class FlowHandler(tornado.web.RequestHandler):
+class FlowHandler(BaseHandler):
     def get(self):
         self.write(self.__class__.__name__)
         import random
@@ -167,7 +212,7 @@ class FlowHandler(tornado.web.RequestHandler):
         print 'on_finish'
 
 
-class ErrorHandler(tornado.web.RequestHandler):
+class ErrorHandler(BaseHandler):
     def get(self, code):
         code = int(code)
         self.send_error(
@@ -183,7 +228,7 @@ class ErrorHandler(tornado.web.RequestHandler):
         ))
 
 
-class UploadHandler(tornado.web.RequestHandler):
+class UploadHandler(BaseHandler):
     def get(self):
         self.write('curl -i -L -F img=@avatar.png localhost:8000/upload')
 
@@ -201,7 +246,7 @@ class UploadHandler(tornado.web.RequestHandler):
         self.write("OK")
 
 
-class RewriteHandler(tornado.web.RequestHandler):
+class RewriteHandler(BaseHandler):
     def set_default_headers(self):
         self.set_header("x-powered-by", "Tornademo")
 
@@ -225,7 +270,6 @@ class RewriteHandler(tornado.web.RequestHandler):
         self.set_status(256, 'customized status header')
 
 
-
 if __name__ == "__main__":
     app = tornado.web.Application([
         (r'^/html/(.*)$', tornado.web.StaticFileHandler, {
@@ -239,6 +283,8 @@ if __name__ == "__main__":
             }
         ),
         (r"/", IndexHandler),
+        (r"/logout", LogoutHandler),
+        (settings.LOGIN_URL, LoginHandler),
         tornado.web.url(r"/upload", UploadHandler, name='upload'),
         (r"/flow", FlowHandler),
         tornado.web.url(r"/gallery", GalleryHandler, name="gallery"),

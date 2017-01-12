@@ -8,10 +8,10 @@
 {% block page_body %}
 <div class="jumbotron">
     <div class="container">
-        <h1>Hello, World!</h1>
+        <h1>Hello, {{ current_user }}{#World#}!</h1>
         <p></p>
         <p>
-            <a class="btn btn-primary btn-lg" href="{{ reverse_url('simple_search') }}">Upload</a>
+            <a class="btn btn-primary btn-lg" href="{{ reverse_url('gallery') }}">Gallery</a>
         </p>
     </div>
 </div>
