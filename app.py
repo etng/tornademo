@@ -109,16 +109,26 @@ class GalleryHandler(tornado.web.RequestHandler):
     def get(self):
         def format_image(filename):
             return os.path.basename(os.path.dirname(filename)), '/{}'.format(filename)
-        perpage = 16
-        offset = int(self.get_query_argument('offset', 0))
+        per_page = 16
+        cur_page = int(self.get_query_argument('page', 0))
         data_file = os.path.join(settings.BASE_DIR, 'data/gallery_files.json')
-        images = map(format_image, json.load(open(data_file)))[offset:offset + perpage]
+        images = json.load(open(data_file))
+        item_cnt = len(images)
+        page_cnt = item_cnt / per_page
+        if item_cnt % per_page:
+            page_cnt += 1
+        cur_page = max(1, min(cur_page, page_cnt))
+        offset = (cur_page - 1) * per_page
         self.render(
             'gallery.html',
             ui=settings.ui,
             settings=settings,
-            images=images,
-            offset=offset + perpage
+            items=map(format_image, images[offset:offset + per_page]),
+            per_page=per_page,
+            page_cnt=page_cnt,
+            cur_page=cur_page,
+            offset=offset,
+            item_cnt=item_cnt
         )
 
 

@@ -7,18 +7,24 @@
 
 {% block page_body %}
  <div class="panel panel-default">
-    <div class="panel-heading">图片鉴别
+    <div class="panel-heading">Gallery
         <div class="pull-right actions">
+            <span>
+                {{item_cnt}} Items {{cur_page}}/{{page_cnt}} Pages
+            </span>
             <div class="btn-group">
-              <a href="/gallery?offset={{offset}}" class="btn btn-default">
-                <span class="glyphicon glyphicon-refresh"></span>Next
+              <a href="/gallery?page={{max(1, cur_page-1)}}" class="btn btn-default btn-prev-page">
+                <i class="glyphicon glyphicon-step-backward"></i>Previous
+              </a>
+              <a href="/gallery?page={{min(page_cnt, cur_page+1)}}" class="btn btn-default btn-next-page">
+                <i class="glyphicon glyphicon-step-forward"></i>Next
               </a>
             </div>
         </div>
     </div>
     <div class="panel-body">
         <div class="row img-grid">
-            {% for author, img in images %}
+            {% for author, img in items %}
              <div class='col-sm-3 img-cell'>
                 <div class="panel panel-default">
                     <div class="panel-heading">@{{author}}
@@ -38,11 +44,17 @@
             {% end %}
         </div>
     </div>
-    <div class="panel-heading">图片鉴别
+    <div class="panel-heading">Gallery
         <div class="pull-right actions">
+            <span>
+                {{item_cnt}} Items {{cur_page}}/{{page_cnt}} Pages
+            </span>
             <div class="btn-group">
-              <a href="/gallery?offset={{offset}}" class="btn btn-default">
-                <span class="glyphicon glyphicon-refresh"></span>Next
+              <a href="/gallery?page={{max(1, cur_page-1)}}" class="btn btn-default btn-prev-page">
+                <i class="glyphicon glyphicon-step-backward"></i>Previous
+              </a>
+              <a href="/gallery?page={{min(page_cnt, cur_page+1)}}" class="btn btn-default btn-next-page">
+                <i class="glyphicon glyphicon-step-forward"></i>Next
               </a>
             </div>
         </div>
@@ -97,6 +109,11 @@ jQuery(function(){
         delete_image($btn.data('url'))
         $btn.closest('.panel').parent().remove()
         var cell_cnt = $('.img-grid .img-cell').length
+        if(!cell_cnt){
+            setTimeout(function(){
+                location.href = $('.btn-next-page').attr('href')
+            }, 500)
+        }
         console.log(cell_cnt, 'cells left')
         if(load_threshold>=cell_cnt && !loading){
             console.log('need to load more images')
