@@ -1,4 +1,7 @@
+nohup.out
 *.pyc
 *.swp
 data/logs/
 media/upload/
+data/gallery_files.json
+media/reviewed

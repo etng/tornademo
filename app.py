@@ -9,7 +9,6 @@ import json
 import os
 import sys
 import shutil
-from models import *  # noqa
 settings.web['login_url'] = settings.LOGIN_URL
 
 tornado.options.define(
@@ -76,7 +75,7 @@ class LoginHandler(BaseHandler):
             self.set_secure_cookie('user', json.dumps(username), expires_days=0.2)
             return self.redirect(self.get_query_argument("next", '/'))
         else:
-            self.redirect(self.settings.login_url)
+            self.redirect(self.settings['login_url'])
 
 
 
@@ -144,7 +143,7 @@ class IndexHandler(BaseHandler):
             ui=settings.ui,
             settings=settings,
             runtime=runtime,
-            latest_posts=Post.objects,
+            latest_posts=[],  # Post.objects,
         )
 
 
@@ -168,6 +167,11 @@ class GalleryHandler(BaseHandler):
             ui=settings.ui,
             settings=settings,
             items=map(format_image, images[offset:offset + per_page]),
+            tags=(
+                ('normal', 'Normal'),
+                ('sexy', 'Sexy'),
+                ('pornographic', 'Pornographic'),
+            ),
             per_page=per_page,
             page_cnt=page_cnt,
             cur_page=cur_page,
@@ -188,6 +192,21 @@ class DeleteImageHandler(BaseHandler):
         shutil.move(os.path.join(settings.BASE_DIR, image), dest_path)
         self.write(dict(status=True, message='deleted'))
 
+
+class TagImageHandler(BaseHandler):
+    @tornado.web.authenticated
+    def post(self):
+        # import ipdb;ipdb.set_trace()
+        image = self.get_body_argument('image').lstrip('/')
+        old_tag = self.get_body_argument('old_tag')
+        tag = self.get_body_argument('tag')
+        trash_path = os.path.join(settings.web['media_path'], 'reviewed')
+        dest_path = os.path.join(trash_path, tag, old_tag, os.path.basename(image))
+        dest_parent = os.path.dirname(dest_path)
+        os.path.exists(dest_parent) or os.makedirs(dest_parent, 0777)
+        shutil.move(os.path.join(settings.BASE_DIR, image), dest_path)
+        self.write(dict(status=True, message='tag updated'))
+        
 
 class FlowHandler(BaseHandler):
     def get(self):
@@ -289,6 +308,7 @@ if __name__ == "__main__":
         (r"/flow", FlowHandler),
         tornado.web.url(r"/gallery", GalleryHandler, name="gallery"),
         (r"/del-image", DeleteImageHandler),
+        (r"/tag-image", TagImageHandler),
         (r"/error/(\d+)", ErrorHandler),
         (r"/rewrite_k/(\d+)/(.*)", RewriteHandler),
         (r"/rewrite_n/(?P<id>\d+)/(?P<action>.*)", RewriteHandler),

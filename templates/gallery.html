@@ -39,6 +39,13 @@
                     <div class="panel-body">
                         <a href="{{img}}" target="_blank"><img src="{{img}}" /></a>
                     </div>
+                    <div class="panel-heading">
+                            <div class="btn-group">
+                                {% for _tag, _lbl in tags %}
+                              <a href="/tag-image" data-url="{{img}}" data-old-tag="{{author}}" data-tag="{{_tag}}" class="btn btn-default btn-tag-image">{{_lbl}}</a>
+                                {% end %}
+                            </div>
+                    </div>
                 </div>
              </div>
             {% end %}
@@ -104,21 +111,43 @@ jQuery(function(){
         })
         // setTimeout(cb, 100)
     }
+    function tag_image(url, old_tag, tag){
+        console.log('tagging image', url)
+        $.post('/tag-image', {
+            'image': url,
+            'old_tag': old_tag,
+            'tag': tag
+        }, function(response){
+            console.log(response.message)
+        })
+        // setTimeout(cb, 100)
+    }
+    function remove_panel_grid(content){
+        content.closest('.panel').parent().fadeOut(300, function(){
+            $(this).remove()
+            var cell_cnt = $('.img-grid .img-cell').length
+            if(!cell_cnt){
+                setTimeout(function(){
+                    location.href = $('.btn-next-page').attr('href')
+                }, 500)
+            }
+            console.log(cell_cnt, 'cells left')
+            if(load_threshold>=cell_cnt && !loading){
+                console.log('need to load more images')
+                load_images()
+            }
+        })
+    }
+    $('.btn-tag-image').on('click', function(){
+        var $btn = $(this)
+        tag_image($btn.data('url'), $btn.data('old-tag'), $btn.data('tag'))
+        remove_panel_grid($btn)
+        return false;
+    })
     $('.btn-delete-image').on('click', function(){
         var $btn = $(this)
         delete_image($btn.data('url'))
-        $btn.closest('.panel').parent().remove()
-        var cell_cnt = $('.img-grid .img-cell').length
-        if(!cell_cnt){
-            setTimeout(function(){
-                location.href = $('.btn-next-page').attr('href')
-            }, 500)
-        }
-        console.log(cell_cnt, 'cells left')
-        if(load_threshold>=cell_cnt && !loading){
-            console.log('need to load more images')
-            load_images()
-        }
+        remove_panel_grid($btn)
         return false;
     })
 })
